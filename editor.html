@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>MatchForecast Editor</title>
+<style>
+  :root{
+    --navy:#171f31; --navy2:#1e2740; --green:#2ecc58; --red:#e34848;
+    --blue:#2f7bff; --bg:#f4f6f9; --card:#ffffff; --text:#182233; --muted:#6b7688;
+    --border:#e4e8ee;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);}
+  header.app-header{background:var(--navy);color:#fff;padding:16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10;}
+  header.app-header .back{background:none;border:none;color:#fff;font-size:20px;padding:0 6px 0 0;cursor:pointer;}
+  header.app-header h1{font-size:17px;margin:0;}
+  header.app-header .sub{font-size:11px;color:#9aa5bd;margin-top:2px;}
+  main{padding:14px;padding-bottom:80px;max-width:640px;margin:0 auto;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;}
+  .status-pill{display:inline-flex;align-items:center;gap:6px;background:#e9fbf0;color:#1a9a45;padding:8px 12px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:14px;}
+  .status-pill.offline{background:#fdecec;color:#c0392b;}
+  .section-row{display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;cursor:pointer;}
+  .section-row:active{background:#f0f2f6;}
+  .section-row .left{display:flex;align-items:center;gap:12px;}
+  .section-row .icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;}
+  .section-row .name{font-weight:600;font-size:14px;}
+  .section-row .count{font-size:12px;color:var(--muted);}
+  .section-row .chev{color:var(--muted);}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:8px;padding:12px 16px;font-size:14px;font-weight:600;cursor:pointer;width:100%;}
+  .btn-green{background:var(--green);color:#04371a;}
+  .btn-blue{background:var(--blue);color:#fff;}
+  .btn-red{background:var(--red);color:#fff;}
+  .btn-outline{background:#fff;border:1px solid var(--border);color:var(--text);}
+  .btn-sm{width:auto;padding:8px 12px;font-size:13px;}
+  .row{display:flex;gap:8px;}
+  .item-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;}
+  .item-card .title{font-weight:600;font-size:14px;margin-bottom:4px;}
+  .item-card .meta{font-size:12px;color:var(--muted);margin-bottom:8px;}
+  .badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+  .badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;background:#eef1f6;color:#465066;}
+  .badge.bet9ja{background:#0a5c36;color:#fff;} .badge.sportybet{background:#e2001a;color:#fff;}
+  .badge.betpawa{background:#f5a623;color:#1a1a1a;} .badge.betway{background:#0b0b0b;color:#fff;}
+  .badge.onexbet{background:#1c1c50;color:#fff;}
+  label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:12px 0 6px;}
+  input[type=text],input[type=number],input[type=date],select,textarea{
+    width:100%;padding:11px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:#fff;color:var(--text);
+  }
+  textarea{min-height:80px;}
+  fieldset{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:16px;}
+  legend{font-size:12px;font-weight:700;color:var(--muted);padding:0 6px;}
+  .bm-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+  .bm-row .bm-label{width:78px;font-size:12px;font-weight:600;flex-shrink:0;}
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);display:flex;z-index:10;}
+  .bottom-nav button{flex:1;background:none;border:none;padding:10px 0 8px;font-size:11px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .bottom-nav button.active{color:var(--green);}
+  .bottom-nav .ic{font-size:18px;}
+  .empty{text-align:center;color:var(--muted);padding:30px 10px;font-size:13px;}
+  .hint{font-size:12px;color:var(--muted);line-height:1.5;margin-top:8px;}
+  .code-box{font-family:monospace;background:#0f1524;color:#8ff0b0;padding:10px;border-radius:8px;font-size:12px;overflow-x:auto;white-space:pre-wrap;word-break:break-word;}
+  .toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#182233;color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;z-index:50;}
+  .step{display:flex;gap:10px;margin-bottom:12px;}
+  .step .num{width:24px;height:24px;border-radius:50%;background:var(--green);color:#04371a;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  a.link{color:var(--blue);text-decoration:none;}
+</style>
+</head>
+<body>
+<header class="app-header">
+  <button class="back" id="backBtn" style="visibility:hidden">←</button>
+  <div>
+    <h1 id="headerTitle">MatchForecast Editor</h1>
+    <div class="sub" id="headerSub">Private daily content manager</div>
+  </div>
+</header>
+<main id="app"></main>
+<nav class="bottom-nav">
+  <button data-tab="home" class="active"><span class="ic">🏠</span>Home</button>
+  <button data-tab="publish"><span class="ic">⬆️</span>Publish</button>
+  <button data-tab="settings"><span class="ic">⚙️</span>Settings</button>
+</nav>
+<script>
+/* ============================================================
+   MatchForecast Editor
+   Single-file, no-backend admin tool. Talks directly to the
+   GitHub Contents API to read/write one data.json file that
+   lives in the PUBLIC bettingsite repo. The public site's
+   script.js reads that same file at runtime.
+
+   SECURITY — READ THIS
+   - Your GitHub token is baked directly into this file below
+     (HARDCODED_TOKEN) so there is no login step at all: open
+     the file and start editing.
+   - This means anyone who obtains a copy of THIS EXACT FILE
+     has full write access to your bettingsite repo. There is
+     no password or login screen protecting that. Treat this
+     file itself as the secret: don't host it at a public URL,
+     don't share it, don't commit it anywhere public.
+   - Keep this file only on your own device(s), or in the
+     PRIVATE matchforecast-editor repo (never make that repo
+     public while this token is inside it).
+   - If this file is ever lost, shared, or the device is
+     compromised, revoke the token immediately at
+     github.com/settings/tokens and generate a new one here.
+   ============================================================ */
+
+// Paste your fine-grained GitHub token here (Contents: read/write,
+// scoped only to waec2022/bettingsite). This is the only setup step.
+const HARDCODED_TOKEN = "PASTE_YOUR_GITHUB_TOKEN_HERE";
+
+const CONFIG_KEY = 'mf_editor_config';       // non-secret: owner/repo/branch/path
+const DRAFT_KEY  = 'mf_editor_draft';        // non-secret: local working copy of data.json
+const TOKEN_KEY  = 'mf_editor_token';        // secret: sessionStorage ONLY
+
+const DEFAULT_BOOKMAKERS = [
+  {key:'bet9ja', label:'Bet9ja'},
+  {key:'sportybet', label:'SportyBet'},
+  {key:'betpawa', label:'BetPawa'},
+  {key:'betway', label:'Betway'},
+  {key:'onexbet', label:'1xBet'},
+];
+
+const SECTION_DEFS = [
+  {key:'predictions', label:'Predictions', icon:'⚽', color:'#2ecc58', hasBookmakers:true,
+    fields:[
+      {key:'date', label:'Date', type:'date'},
+      {key:'home', label:'Home Team', type:'text', required:true},
+      {key:'away', label:'Away Team', type:'text', required:true},
+      {key:'league', label:'League', type:'text'},
+      {key:'category', label:'Category (for site filters)', type:'select', options:['Over/Under','BTTS','Match Winner','Double Chance','Other']},
+      {key:'selection', label:'Selection / Pick', type:'text', required:true},
+      {key:'odds', label:'Odds', type:'number', step:'0.01', required:true},
+      {key:'rating', label:'Rating (1-10)', type:'number'},
+      {key:'status', label:'Status', type:'select', options:['draft','scheduled','published','cancelled']},
+      {key:'publishAt', label:'Publish at (Africa/Lagos)', type:'schedule'},
+    ],
+    title:i=>`${i.home||'Home'} vs ${i.away||'Away'}`,
+    subtitle:i=>`${i.selection||''}${i.odds?' | Odds '+i.odds:''}${i.league?' · '+i.league:''}`
+  },
+  {key:'accumulators', label:'Accumulators', icon:'🏆', color:'#8b5cf6', hasBookmakers:true,
+    fields:[
+      {key:'title', label:'Title', type:'text', required:true, placeholder:'e.g. 5-Odds Slip'},
+      {key:'tier', label:'Tier label', type:'text', placeholder:'e.g. 5 ODDS, 20+ ODDS'},
+      {key:'date', label:'Date', type:'date'},
+      {key:'selectionsText', label:'Selections (one per line: Match | Pick | Odds)', type:'textarea',
+        placeholder:'Man City vs Arsenal | Home | 1.60\nPSG vs Marseille | Over 2.5 | 1.55'},
+      {key:'totalOdds', label:'Total Odds', type:'number', step:'0.01'},
+      {key:'rating', label:'Rating (1-10)', type:'number'},
+      {key:'status', label:'Status', type:'select', options:['draft','scheduled','published','cancelled']},
+      {key:'publishAt', label:'Publish at (Africa/Lagos)', type:'schedule'},
+    ],
+    title:i=>i.title||'Accumulator',
+    subtitle:i=>`${(i.selections||[]).length} selections${i.totalOdds?' | Total '+i.totalOdds:''}`
+  },
+  {key:'correctScores', label:'Correct Score', icon:'🎯', color:'#e34848', hasBookmakers:true,
+    fields:[
+      {key:'match', label:'Match', type:'text', required:true},
+      {key:'league', label:'League', type:'text'},
+      {key:'score', label:'Score', type:'text', required:true, placeholder:'2-1'},
+      {key:'odds', label:'Odds', type:'number', step:'0.01'},
+      {key:'date', label:'Date', type:'date'},
+      {key:'rating', label:'Rating (1-10)', type:'number'},
+      {key:'status', label:'Status', type:'select', options:['draft','scheduled','published','cancelled']},
+      {key:'publishAt', label:'Publish at (Africa/Lagos)', type:'schedule'},
+    ],
+    title:i=>i.match||'Match',
+    subtitle:i=>`Score ${i.score||'?'}${i.odds?' | Odds '+i.odds:''}`
+  },
+  {key:'codesOnly', label:'Codes Only', icon:'🔑', color:'#f5a623', hasBookmakers:false,
+    fields:[
+      {key:'bookmaker', label:'Bookmaker', type:'bookmakerSelect', required:true},
+      {key:'code', label:'Booking Code', type:'text', required:true},
+      {key:'label', label:'Label / Note', type:'text'},
+      {key:'odds', label:'Odds', type:'number', step:'0.01'},
+      {key:'date', label:'Date', type:'date'},
+      {key:'rating', label:'Rating (1-10)', type:'number'},
+      {key:'status', label:'Status', type:'select', options:['draft','scheduled','published','cancelled']},
+      {key:'publishAt', label:'Publish at (Africa/Lagos)', type:'schedule'},
+    ],
+    title:i=>bookmakerLabel(i.bookmaker),
+    subtitle:i=>i.code||''
+  },
+  {key:'livePredictions', label:'Live Predictions', icon:'📡', color:'#2f7bff', hasBookmakers:true,
+    fields:[
+      {key:'match', label:'Match', type:'text', required:true},
+      {key:'league', label:'League', type:'text'},
+      {key:'currentScore', label:'Current Score', type:'text', placeholder:'1-0'},
+      {key:'pick', label:'Pick', type:'text', required:true},
+      {key:'odds', label:'Odds', type:'number', step:'0.01'},
+      {key:'minute', label:"Minute / Status", type:'text', placeholder:"e.g. 34' or HT"},
+      {key:'date', label:'Date', type:'date'},
+      {key:'rating', label:'Rating (1-10)', type:'number'},
+      {key:'status', label:'Status', type:'select', options:['draft','published','cancelled']},
+      {key:'publishAt', label:'Publish at (Africa/Lagos)', type:'schedule'},
+    ],
+    title:i=>i.match||'Match',
+    subtitle:i=>`${i.pick||''}${i.minute?' · '+i.minute:''}`
+  },
+  {key:'betOfDay', label:'Bet of the Day', icon:'⭐', color:'#ffb100', hasBookmakers:true,
+    fields:[
+      {key:'match', label:'Match', type:'text', required:true},
+      {key:'market', label:'Market', type:'text'},
+      {key:'pick', label:'Pick', type:'text', required:true},
+      {key:'odds', label:'Odds', type:'number', step:'0.01'},
+      {key:'description', label:'Description', type:'textarea'},
+      {key:'date', label:'Date', type:'date'},
+      {key:'rating', label:'Rating (1-10)', type:'number'},
+      {key:'status', label:'Status', type:'select', options:['draft','scheduled','published','cancelled']},
+      {key:'publishAt', label:'Publish at (Africa/Lagos)', type:'schedule'},
+    ],
+    title:i=>i.match||'Match',
+    subtitle:i=>`${i.pick||''}${i.odds?' | Odds '+i.odds:''}`
+  },
+  {key:'results', label:'Results', icon:'📊', color:'#0aa2a2', hasBookmakers:false,
+    fields:[
+      {key:'match', label:'Match', type:'text', required:true},
+      {key:'market', label:'Market', type:'text'},
+      {key:'prediction', label:'Prediction', type:'text'},
+      {key:'odds', label:'Odds', type:'number', step:'0.01'},
+      {key:'actualResult', label:'Actual Result', type:'text', placeholder:'2-1'},
+      {key:'outcome', label:'Outcome', type:'select', options:['won','lost','void']},
+      {key:'date', label:'Date', type:'date'},
+      {key:'rating', label:'Rating (1-10)', type:'number'},
+    ],
+    title:i=>i.match||'Match',
+    subtitle:i=>`${i.prediction||''}${i.outcome?' · '+i.outcome.toUpperCase():''}`
+  },
+  {key:'news', label:'News', icon:'📰', color:'#465066', hasBookmakers:false,
+    fields:[
+      {key:'title', label:'Title', type:'text', required:true},
+      {key:'category', label:'Category', type:'text', placeholder:'Preview, Analysis, Guide, Report'},
+      {key:'excerpt', label:'Excerpt', type:'textarea'},
+      {key:'content', label:'Full Content', type:'textarea'},
+      {key:'author', label:'Author', type:'text'},
+      {key:'date', label:'Date', type:'date'},
+      {key:'status', label:'Status', type:'select', options:['draft','scheduled','published','archived']},
+      {key:'publishAt', label:'Publish at (Africa/Lagos)', type:'schedule'},
+    ],
+    title:i=>i.title||'News item',
+    subtitle:i=>(i.date||'')
+  },
+];
+
+function bookmakerLabel(key){
+  const all = state.data?.meta?.bookmakers || DEFAULT_BOOKMAKERS;
+  const found = all.find(b=>b.key===key);
+  return found ? found.label : (key||'—');
+}
+
+let state = {
+  view:{tab:'home', section:null, itemId:null},
+  config: loadConfig(),
+  token: HARDCODED_TOKEN,
+  data: null,
+  sha: null,
+  dirty:false,
+  connected:false,
+};
+
+function loadConfig(){
+  try{ return JSON.parse(localStorage.getItem(CONFIG_KEY)) || {owner:'waec2022', repo:'bettingsite', branch:'main', path:'data.json'}; }
+  catch(e){ return {owner:'waec2022', repo:'bettingsite', branch:'main', path:'data.json'}; }
+}
+function saveConfig(){ localStorage.setItem(CONFIG_KEY, JSON.stringify(state.config)); }
+function saveDraft(){ if(state.data) localStorage.setItem(DRAFT_KEY, JSON.stringify({sha:state.sha, data:state.data})); }
+function loadDraft(){ try{ return JSON.parse(localStorage.getItem(DRAFT_KEY)); }catch(e){ return null; } }
+
+function emptyData(){
+  return {
+    meta:{ bookmakers: DEFAULT_BOOKMAKERS, overview:{date:'', statTotal:0, statWinners:0, statLosers:0, statHitRate:''} },
+    predictions:[], accumulators:[], correctScores:[], codesOnly:[],
+    livePredictions:[], betOfDay:[], results:[], news:[]
+  };
+}
+
+function uid(){ return 'i' + Math.random().toString(36).slice(2,9); }
+
+// Africa/Lagos is fixed UTC+1 year-round (no DST), so we can compute it
+// by simply shifting the current UTC time by 1 hour and reading UTC fields.
+function lagosDateTimeLocal(msOffset){
+  const d = new Date(Date.now() + (msOffset||0) + 60*60*1000);
+  const pad = n=>String(n).padStart(2,'0');
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
+}
+function lagosTomorrow9am(){
+  const d = new Date(Date.now() + 60*60*1000); // shifted to Lagos "now"
+  d.setUTCDate(d.getUTCDate()+1);
+  d.setUTCHours(9,0,0,0);
+  const pad = n=>String(n).padStart(2,'0');
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}T09:00`;
+}
+function scheduleStatusLabel(publishAt){
+  if(!publishAt) return 'Not scheduled';
+  const t = new Date(publishAt).getTime();
+  const diffMs = t - Date.now();
+  if(diffMs <= 0) return 'Already live';
+  const mins = Math.round(diffMs/60000);
+  if(mins < 60) return `Publishes in ${mins}m`;
+  const hrs = Math.round(mins/60);
+  if(hrs < 24) return `Publishes in ${hrs}h`;
+  const days = Math.round(hrs/24);
+  return days===1 ? 'Publishes tomorrow' : `Publishes in ${days}d`;
+}
+function toast(msg){
+  const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
+  document.body.appendChild(t); setTimeout(()=>t.remove(), 2200);
+}
+
+/* ---------------- GitHub API ---------------- */
+async function ghRequest(method, body){
+  const {owner, repo, path} = state.config;
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`;
+  const headers = {
+    'Authorization': `token ${state.token}`,
+    'Accept': 'application/vnd.github+json'
+  };
+  const opts = {method, headers};
+  if(body){ headers['Content-Type']='application/json'; opts.body = JSON.stringify(body); }
+  const res = await fetch(method==='GET' ? `${url}?ref=${encodeURIComponent(state.config.branch)}` : url, opts);
+  return res;
+}
+
+function b64EncodeUnicode(str){
+  return btoa(unescape(encodeURIComponent(str)));
+}
+function b64DecodeUnicode(str){
+  return decodeURIComponent(escape(atob(str)));
+}
+
+async function connectAndLoad(){
+  if(!state.token || state.token === "PASTE_YOUR_GITHUB_TOKEN_HERE"){ toast('Open this file in a text editor and set HARDCODED_TOKEN first'); return; }
+  saveConfig();
+  try{
+    const res = await ghRequest('GET');
+    if(res.status === 404){
+      state.data = emptyData();
+      state.sha = null;
+      state.connected = true;
+      toast('Connected. No data.json yet — it will be created on first publish.');
+    } else if(res.ok){
+      const json = await res.json();
+      state.sha = json.sha;
+      const content = b64DecodeUnicode(json.content.replace(/\n/g,''));
+      state.data = JSON.parse(content);
+      if(!state.data.meta) state.data.meta = {bookmakers: DEFAULT_BOOKMAKERS, overview:{}};
+      if(!state.data.meta.bookmakers) state.data.meta.bookmakers = DEFAULT_BOOKMAKERS;
+      state.connected = true;
+      toast('Loaded latest data.json from GitHub');
+    } else {
+      const errText = await res.text();
+      toast(`GitHub error ${res.status}. Check token/repo/branch.`);
+      console.error(errText);
+      state.connected = false;
+      render();
+      return;
+    }
+    state.dirty = false;
+    saveDraft();
+    render();
+  } catch(e){
+    console.error(e);
+    toast('Network error reaching GitHub API');
+  }
+}
+
+async function publish(commitMessage){
+  if(!state.connected){ toast('Connect first'); return; }
+  const {branch} = state.config;
+  const content = b64EncodeUnicode(JSON.stringify(state.data, null, 2));
+  const body = { message: commitMessage || 'Update data.json via MatchForecast Editor', content, branch };
+  if(state.sha) body.sha = state.sha;
+  try{
+    const res = await ghRequest('PUT', body);
+    if(res.ok){
+      const json = await res.json();
+      state.sha = json.content.sha;
+      state.dirty = false;
+      saveDraft();
+      toast('Published! GitHub Pages will update within a minute or two.');
+      render();
+    } else {
+      const errText = await res.text();
+      console.error(errText);
+      toast(`Publish failed (${res.status}). See console.`);
+    }
+  } catch(e){
+    console.error(e);
+    toast('Network error publishing');
+  }
+}
+
+/* ---------------- Rendering ---------------- */
+const app = document.getElementById('app');
+const headerTitle = document.getElementById('headerTitle');
+const headerSub = document.getElementById('headerSub');
+const backBtn = document.getElementById('backBtn');
+
+document.querySelectorAll('.bottom-nav button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    state.view = {tab:btn.dataset.tab, section:null, itemId:null};
+    document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  });
+});
+backBtn.addEventListener('click', ()=>{
+  if(state.view.itemId !== null || state.view.itemId === 'new'){
+    state.view.itemId = null;
+  } else if(state.view.section){
+    state.view.section = null;
+  } else {
+    state.view.tab = 'home';
+  }
+  render();
+});
+
+function render(){
+  const v = state.view;
+  backBtn.style.visibility = (v.section || v.itemId!==null) ? 'visible' : 'hidden';
+
+  if(v.tab === 'settings'){ headerTitle.textContent='Settings'; headerSub.textContent='GitHub connection'; return renderSettings(); }
+  if(v.tab === 'publish'){ headerTitle.textContent='Publish'; headerSub.textContent='Push changes to the public site'; return renderPublish(); }
+
+  // home tab
+  if(!state.data){
+    headerTitle.textContent = 'MatchForecast Editor';
+    headerSub.textContent = 'Not connected';
+    return renderConnectPrompt();
+  }
+  if(v.itemId !== null){
+    const def = SECTION_DEFS.find(s=>s.key===v.section);
+    headerTitle.textContent = v.itemId==='new' ? `Add ${def.label}` : `Edit ${def.label}`;
+    headerSub.textContent = '';
+    return renderForm(def, v.itemId);
+  }
+  if(v.section){
+    const def = SECTION_DEFS.find(s=>s.key===v.section);
+    headerTitle.textContent = def.label;
+    headerSub.textContent = `${(state.data[def.key]||[]).length} items`;
+    return renderSectionList(def);
+  }
+  headerTitle.textContent = 'MatchForecast Editor';
+  headerSub.textContent = 'Update your predictions easily';
+  renderHome();
+}
+
+function renderConnectPrompt(){
+  app.innerHTML = `
+    <div class="card">
+      <p style="margin-top:0">This editor is not connected yet. Go to <b>Settings</b> to add your GitHub token and repository, then tap <b>Connect &amp; Load</b>.</p>
+      <button class="btn btn-green" id="goSettings">Go to Settings</button>
+    </div>`;
+  document.getElementById('goSettings').onclick = ()=>{ state.view.tab='settings'; render(); };
+}
+
+function renderHome(){
+  const pill = state.connected
+    ? `<div class="status-pill">✓ Connected to GitHub${state.dirty ? ' · unsaved changes' : ''}</div>`
+    : `<div class="status-pill offline">Not connected — go to Settings</div>`;
+  const rows = SECTION_DEFS.map(def=>{
+    const count = (state.data[def.key]||[]).length;
+    return `<div class="section-row" data-section="${def.key}">
+      <div class="left">
+        <div class="icon" style="background:${def.color}">${def.icon}</div>
+        <div><div class="name">${def.label}</div><div class="count">${count} item${count===1?'':'s'}</div></div>
+      </div>
+      <div class="chev">›</div>
+    </div>`;
+  }).join('');
+  app.innerHTML = pill + rows;
+  app.querySelectorAll('.section-row').forEach(row=>{
+    row.onclick = ()=>{ state.view.section = row.dataset.section; render(); };
+  });
+}
+
+function renderSectionList(def){
+  const items = state.data[def.key] || [];
+  const addBtn = `<button class="btn btn-green" id="addItemBtn" style="margin-bottom:14px">+ Add ${def.label.replace(/s$/,'')}</button>`;
+  if(items.length===0){
+    app.innerHTML = addBtn + `<div class="empty">No ${def.label.toLowerCase()} yet.</div>`;
+  } else {
+    const cards = items.map((item, idx)=>{
+      const badges = def.hasBookmakers && item.bookmakers
+        ? Object.entries(item.bookmakers).filter(([k,v])=>v && (v.odds||v.code))
+            .map(([k,v])=>`<span class="badge ${k}">${bookmakerLabel(k)}${v.odds?' '+v.odds:''}</span>`).join('')
+        : (def.key==='codesOnly' ? `<span class="badge ${item.bookmaker}">${item.code||''}</span>` : '');
+      return `<div class="item-card">
+        <div class="title">${idx+1}. ${escapeHtml(def.title(item))}</div>
+        <div class="meta">${escapeHtml(def.subtitle(item))}</div>
+        ${item.publishAt ? `<div class="meta">🕒 ${escapeHtml(scheduleStatusLabel(item.publishAt))}</div>` : ''}
+        ${badges?`<div class="badges">${badges}</div>`:''}
+        <div class="row">
+          <button class="btn btn-blue btn-sm" data-edit="${item.id}">Edit</button>
+          <button class="btn btn-red btn-sm" data-del="${item.id}">Delete</button>
+        </div>
+      </div>`;
+    }).join('');
+    app.innerHTML = addBtn + cards;
+  }
+  document.getElementById('addItemBtn').onclick = ()=>{ state.view.itemId='new'; render(); };
+  app.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{ state.view.itemId=b.dataset.edit; render(); });
+  app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
+    if(confirm('Delete this item?')){
+      state.data[def.key] = state.data[def.key].filter(i=>i.id!==b.dataset.del);
+      state.dirty = true; saveDraft(); render();
+    }
+  });
+}
+
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function renderForm(def, itemId){
+  const isNew = itemId === 'new';
+  const existing = isNew ? {} : (state.data[def.key]||[]).find(i=>i.id===itemId) || {};
+  const bookmakers = state.data.meta.bookmakers || DEFAULT_BOOKMAKERS;
+
+  const fieldsHtml = def.fields.map(f=>{
+    const val = f.key==='selectionsText'
+      ? (existing.selections||[]).map(s=>`${s.match} | ${s.pick} | ${s.odds}`).join('\n')
+      : (existing[f.key] ?? '');
+    if(f.type==='select'){
+      return `<label>${f.label}</label><select name="${f.key}">${f.options.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select>`;
+    }
+    if(f.type==='textarea'){
+      return `<label>${f.label}</label><textarea name="${f.key}" placeholder="${f.placeholder||''}">${escapeHtml(val)}</textarea>`;
+    }
+    if(f.type==='bookmakerSelect'){
+      return `<label>${f.label}</label><select name="${f.key}">${bookmakers.map(b=>`<option value="${b.key}" ${val===b.key?'selected':''}>${b.label}</option>`).join('')}</select>`;
+    }
+    if(f.type==='schedule'){
+      const localVal = val ? String(val).slice(0,16) : '';
+      return `<label>${f.label}</label>
+        <input type="datetime-local" name="${f.key}" value="${escapeHtml(localVal)}">
+        <div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">
+          <button type="button" class="btn btn-outline btn-sm" data-sched="0">Now</button>
+          <button type="button" class="btn btn-outline btn-sm" data-sched="15">+15m</button>
+          <button type="button" class="btn btn-outline btn-sm" data-sched="30">+30m</button>
+          <button type="button" class="btn btn-outline btn-sm" data-sched="60">+1h</button>
+          <button type="button" class="btn btn-outline btn-sm" data-sched="120">+2h</button>
+          <button type="button" class="btn btn-outline btn-sm" data-sched="tomorrow9">Tomorrow 9am</button>
+        </div>
+        <p class="hint">Times are Africa/Lagos. Leave blank to publish immediately once you hit Publish.</p>`;
+    }
+    return `<label>${f.label}${f.required?' *':''}</label><input type="${f.type}" name="${f.key}" step="${f.step||''}" placeholder="${f.placeholder||''}" value="${escapeHtml(val)}">`;
+  }).join('');
+
+  let bookmakersHtml = '';
+  if(def.hasBookmakers){
+    const existingBm = existing.bookmakers || {};
+    bookmakersHtml = `<fieldset><legend>Bookmaker odds &amp; codes (optional per bookmaker)</legend>` +
+      bookmakers.map(b=>{
+        const bv = existingBm[b.key] || {};
+        return `<div class="bm-row">
+          <div class="bm-label">${b.label}</div>
+          <input type="text" placeholder="Odds" name="bm_${b.key}_odds" value="${escapeHtml(bv.odds||'')}" style="width:35%">
+          <input type="text" placeholder="Code" name="bm_${b.key}_code" value="${escapeHtml(bv.code||'')}" style="width:65%">
+        </div>`;
+      }).join('') + `</fieldset>`;
+  }
+
+  app.innerHTML = `<form id="itemForm">${fieldsHtml}${bookmakersHtml}
+    <div class="row" style="margin-top:20px">
+      <button type="submit" class="btn btn-green">💾 Save ${def.label.replace(/s$/,'')}</button>
+    </div>
+  </form>`;
+
+  app.querySelectorAll('[data-sched]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const input = btn.closest('form').querySelector('input[type=datetime-local]');
+      input.value = btn.dataset.sched === 'tomorrow9' ? lagosTomorrow9am() : lagosDateTimeLocal(Number(btn.dataset.sched)*60000);
+    });
+  });
+
+  document.getElementById('itemForm').onsubmit = (e)=>{
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const item = isNew ? {id: uid()} : {...existing};
+    def.fields.forEach(f=>{
+      if(f.key==='selectionsText'){
+        const lines = (fd.get('selectionsText')||'').split('\n').map(l=>l.trim()).filter(Boolean);
+        item.selections = lines.map(l=>{
+          const [match,pick,odds] = l.split('|').map(s=>s && s.trim());
+          return {match:match||'', pick:pick||'', odds:odds||''};
+        });
+      } else if(f.type==='schedule'){
+        const raw = fd.get(f.key);
+        item[f.key] = raw ? `${raw}:00+01:00` : '';
+      } else {
+        item[f.key] = fd.get(f.key) || '';
+      }
+    });
+    if(def.hasBookmakers){
+      item.bookmakers = {};
+      bookmakers.forEach(b=>{
+        const odds = fd.get(`bm_${b.key}_odds`) || '';
+        const code = fd.get(`bm_${b.key}_code`) || '';
+        if(odds || code) item.bookmakers[b.key] = {odds, code};
+      });
+    }
+    if(!state.data[def.key]) state.data[def.key] = [];
+    if(isNew){ state.data[def.key].push(item); }
+    else { const idx = state.data[def.key].findIndex(i=>i.id===itemId); state.data[def.key][idx] = item; }
+    state.dirty = true;
+    saveDraft();
+    state.view.itemId = null;
+    render();
+    toast('Saved locally — tap Publish to push it live');
+  };
+}
+
+function renderSettings(){
+  const c = state.config;
+  app.innerHTML = `
+    <div class="card">
+      <label>Repository owner</label>
+      <input type="text" id="fOwner" value="${c.owner}">
+      <label>Repository name</label>
+      <input type="text" id="fRepo" value="${c.repo}">
+      <label>Branch</label>
+      <input type="text" id="fBranch" value="${c.branch}">
+      <label>Data file path</label>
+      <input type="text" id="fPath" value="${c.path}">
+      <button class="btn btn-green" id="connectBtn" style="margin-top:16px">🔗 Connect &amp; Load</button>
+      <p class="hint">${HARDCODED_TOKEN === "PASTE_YOUR_GITHUB_TOKEN_HERE" ? '<b style="color:#c0392b">No token set yet</b> — open this file in a text editor and replace HARDCODED_TOKEN near the top with your real GitHub token.' : 'Connected using the token built into this file. No login needed here.'}</p>
+    </div>
+    <div class="card">
+      <label style="margin-top:0">Bookmakers</label>
+      <div id="bmList">${(state.data?.meta?.bookmakers||DEFAULT_BOOKMAKERS).map((b,i)=>`
+        <div class="bm-row"><input type="text" data-bm-key="${i}" value="${b.key}" placeholder="key" style="width:35%">
+        <input type="text" data-bm-label="${i}" value="${b.label}" placeholder="Label" style="width:50%">
+        <button type="button" data-bm-del="${i}" class="btn btn-red btn-sm">✕</button></div>`).join('')}
+      </div>
+      <button class="btn btn-outline btn-sm" id="addBmBtn" style="margin-top:6px">+ Add bookmaker</button>
+    </div>
+    <div class="card">
+      <label style="margin-top:0">Today's Overview (shown on homepage)</label>
+      <label>Total Selections</label><input type="text" id="ovTotal" value="${state.data?.meta?.overview?.statTotal||''}">
+      <label>Winners (yesterday)</label><input type="text" id="ovWinners" value="${state.data?.meta?.overview?.statWinners||''}">
+      <label>Losers (yesterday)</label><input type="text" id="ovLosers" value="${state.data?.meta?.overview?.statLosers||''}">
+      <label>Hit Rate</label><input type="text" id="ovHitRate" value="${state.data?.meta?.overview?.statHitRate||''}" placeholder="e.g. 48%">
+      <button class="btn btn-blue btn-sm" id="saveOverview" style="margin-top:10px">Save overview</button>
+    </div>`;
+
+  document.getElementById('connectBtn').onclick = ()=>{
+    state.config = {
+      owner: document.getElementById('fOwner').value.trim(),
+      repo: document.getElementById('fRepo').value.trim(),
+      branch: document.getElementById('fBranch').value.trim() || 'main',
+      path: document.getElementById('fPath').value.trim() || 'data.json',
+    };
+    connectAndLoad();
+  };
+  if(state.data){
+    document.getElementById('addBmBtn').onclick = ()=>{
+      state.data.meta.bookmakers.push({key:'newbook', label:'New Bookmaker'});
+      state.dirty = true; saveDraft(); render();
+    };
+    app.querySelectorAll('[data-bm-key]').forEach(inp=>inp.onchange = e=>{
+      state.data.meta.bookmakers[+inp.dataset.bmKey].key = e.target.value.trim();
+      state.dirty = true; saveDraft();
+    });
+    app.querySelectorAll('[data-bm-label]').forEach(inp=>inp.onchange = e=>{
+      state.data.meta.bookmakers[+inp.dataset.bmLabel].label = e.target.value.trim();
+      state.dirty = true; saveDraft();
+    });
+    app.querySelectorAll('[data-bm-del]').forEach(btn=>btn.onclick = ()=>{
+      state.data.meta.bookmakers.splice(+btn.dataset.bmDel,1);
+      state.dirty = true; saveDraft(); render();
+    });
+    document.getElementById('saveOverview').onclick = ()=>{
+      state.data.meta.overview = {
+        statTotal: document.getElementById('ovTotal').value,
+        statWinners: document.getElementById('ovWinners').value,
+        statLosers: document.getElementById('ovLosers').value,
+        statHitRate: document.getElementById('ovHitRate').value,
+        date: new Date().toISOString().slice(0,10),
+      };
+      state.dirty = true; saveDraft();
+      toast('Overview saved locally — tap Publish to push it live');
+    };
+  }
+}
+
+function renderPublish(){
+  if(!state.data){ return renderConnectPrompt(); }
+  const summary = SECTION_DEFS.map(d=>`${d.label}: ${(state.data[d.key]||[]).length}`).join(' · ');
+  app.innerHTML = `
+    <div class="card">
+      <p style="margin-top:0"><b>${state.dirty ? 'You have unsaved changes.' : 'Nothing pending — everything is published.'}</b></p>
+      <p class="hint">${summary}</p>
+      <label>Commit message</label>
+      <input type="text" id="commitMsg" value="Update daily predictions" >
+      <button class="btn btn-green" id="publishBtn" style="margin-top:14px">⬆️ Publish to ${state.config.repo}</button>
+      <button class="btn btn-outline" id="reloadBtn" style="margin-top:10px">↻ Reload latest from GitHub</button>
+    </div>
+    <div class="card">
+      <label style="margin-top:0">Preview (data.json)</label>
+      <div class="code-box">${escapeHtml(JSON.stringify(state.data,null,2)).slice(0,4000)}</div>
+    </div>`;
+  document.getElementById('publishBtn').onclick = ()=> publish(document.getElementById('commitMsg').value);
+  document.getElementById('reloadBtn').onclick = ()=>{
+    if(state.dirty && !confirm('Discard local unsaved changes and reload from GitHub?')) return;
+    connectAndLoad();
+  };
+}
+
+/* ---------------- Boot ---------------- */
+(function boot(){
+  const draft = loadDraft();
+  if(draft && draft.data){
+    state.data = draft.data;
+    state.sha = draft.sha;
+    state.dirty = true;
+    state.connected = HARDCODED_TOKEN !== "PASTE_YOUR_GITHUB_TOKEN_HERE";
+  }
+  render();
+  if(HARDCODED_TOKEN !== "PASTE_YOUR_GITHUB_TOKEN_HERE" && state.config.owner && state.config.repo){
+    if(!draft){ connectAndLoad(); }
+    else { state.connected = true; }
+  }
+})();
+</script>
+</body>
+</html>
