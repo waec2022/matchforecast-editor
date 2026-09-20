@@ -457,11 +457,15 @@ function renderHome(){
     ? `<div class="status-pill">✓ Connected to GitHub${state.dirty ? ' · unsaved changes' : ''}</div>`
     : `<div class="status-pill offline">Not connected — go to Settings</div>`;
   const rows = SECTION_DEFS.map(def=>{
-    const count = (state.data[def.key]||[]).length;
+    const items = state.data[def.key]||[];
+    const count = items.length;
+    const scheduled = items.filter(i=> i.publishAt && new Date(i.publishAt).getTime() > Date.now()).length;
+    const live = count - scheduled;
+    const breakdown = scheduled>0 ? `${live} live · ${scheduled} scheduled` : `${count} item${count===1?'':'s'}`;
     return `<div class="section-row" data-section="${def.key}">
       <div class="left">
         <div class="icon" style="background:${def.color}">${def.icon}</div>
-        <div><div class="name">${def.label}</div><div class="count">${count} item${count===1?'':'s'}</div></div>
+        <div><div class="name">${def.label}</div><div class="count">${breakdown}</div></div>
       </div>
       <div class="chev">›</div>
     </div>`;
@@ -479,8 +483,10 @@ function renderSectionList(def){
     app.innerHTML = addBtn + `<div class="empty">No ${def.label.toLowerCase()} yet.</div>`;
   } else {
     const cards = items.map((item, idx)=>{
+      const bmOrder = (state.data.meta.bookmakers||[]).map(b=>b.key);
       const badges = def.hasBookmakers && item.bookmakers
         ? Object.entries(item.bookmakers).filter(([k,v])=>v && (v.odds||v.code))
+            .sort((a,b)=> bmOrder.indexOf(a[0]) - bmOrder.indexOf(b[0]))
             .map(([k,v])=>`<span class="badge ${k}">${bookmakerLabel(k)}${v.odds?' '+v.odds:''}</span>`).join('')
         : (def.key==='codesOnly' ? `<span class="badge ${item.bookmaker}">${item.code||''}</span>` : '');
       return `<div class="item-card">
