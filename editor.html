@@ -48,6 +48,8 @@
   }
   textarea{min-height:80px;}
   fieldset{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:16px;}
+  .image-picker{display:flex;flex-direction:column;gap:8px;}
+  .image-picker__preview{width:100%;max-height:160px;object-fit:cover;border-radius:8px;border:1px solid var(--border);}
   legend{font-size:12px;font-weight:700;color:var(--muted);padding:0 6px;}
   .bm-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
   .bm-row .bm-label{width:78px;font-size:12px;font-weight:600;flex-shrink:0;}
@@ -201,6 +203,7 @@ const SECTION_DEFS = [
       {key:'market', label:'Market', type:'text'},
       {key:'pick', label:'Pick', type:'text', required:true},
       {key:'odds', label:'Odds', type:'number', step:'0.01'},
+      {key:'photo', label:'Background Photo (optional)', type:'image'},
       {key:'description', label:'Description', type:'textarea'},
       {key:'date', label:'Date', type:'date'},
       {key:'rating', label:'Rating (1-10)', type:'number'},
@@ -532,6 +535,16 @@ function renderForm(def, itemId){
     if(f.type==='bookmakerSelect'){
       return `<label>${f.label}</label><select name="${f.key}">${bookmakers.map(b=>`<option value="${b.key}" ${val===b.key?'selected':''}>${b.label}</option>`).join('')}</select>`;
     }
+    if(f.type==='image'){
+      return `<label>${f.label}</label>
+        <input type="hidden" name="${f.key}" value="${escapeHtml(val)}" data-image-hidden="${f.key}">
+        <div class="image-picker" data-image-picker="${f.key}">
+          <img class="image-picker__preview" data-image-preview="${f.key}" style="${val?'':'display:none'}" src="${escapeHtml(val)}">
+          <input type="file" accept="image/*" data-image-input="${f.key}">
+          <button type="button" class="btn btn-outline btn-sm" data-image-remove="${f.key}" style="${val?'':'display:none'}">Remove photo</button>
+        </div>
+        <p class="hint">Choose a photo from your phone. It's stored directly with this item — keep photos reasonably small (under ~500KB) so publishing stays fast.</p>`;
+    }
     if(f.type==='schedule'){
       const localVal = val ? String(val).slice(0,16) : '';
       return `<label>${f.label}</label>
@@ -574,6 +587,34 @@ function renderForm(def, itemId){
       const input = btn.closest('form').querySelector('input[type=datetime-local]');
       input.value = btn.dataset.sched === 'tomorrow9' ? lagosTomorrow9am() : lagosDateTimeLocal(Number(btn.dataset.sched)*60000);
     });
+  });
+
+  app.querySelectorAll('[data-image-input]').forEach(fileInput=>{
+    const key = fileInput.dataset.imageInput;
+    const hidden = app.querySelector(`[data-image-hidden="${key}"]`);
+    const preview = app.querySelector(`[data-image-preview="${key}"]`);
+    const removeBtn = app.querySelector(`[data-image-remove="${key}"]`);
+    fileInput.addEventListener('change', ()=>{
+      const file = fileInput.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        hidden.value = reader.result;
+        preview.src = reader.result;
+        preview.style.display = 'block';
+        removeBtn.style.display = 'inline-flex';
+      };
+      reader.readAsDataURL(file);
+    });
+    if(removeBtn){
+      removeBtn.addEventListener('click', ()=>{
+        hidden.value = '';
+        preview.src = '';
+        preview.style.display = 'none';
+        removeBtn.style.display = 'none';
+        fileInput.value = '';
+      });
+    }
   });
 
   document.getElementById('itemForm').onsubmit = (e)=>{
